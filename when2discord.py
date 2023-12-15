@@ -2,25 +2,23 @@ import os
 from dotenv import load_dotenv
 import discord
 from discord.ext import commands
-from discord-ui import SlashInteraction, UI
 
 # Load Environment variables
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 TESTING_GUILD_ID = os.getenv('TESTING_GUILD_ID')
 
-# Initialize bot and ui extension
-bot = commands.Bot(" ")
-ui = UI(bot)
+# Initialize bot and guild
+intents = discord.Intents.default()
+bot = commands.Bot(command_prefix='w2d!', description='A bot that will help you schedule events!', intents=intents)
+my_guild = discord.Object(id=TESTING_GUILD_ID)
 
 # Implement helper functions
 
 # Create and implement commands here
-@ui.slash.command("hello world", description="this is a test slash command", options=[
-		SlashOption(str, name="test_string", description="this parameter will be printed")
-		], guild_ids=[TESTING_GUILD_ID])
-async def hello_world(ctx, test_string="walk!!!"):
-	await ctx.respond("HELLO. YOU SAID: " + str(test_string) + " :)")
+@bot.tree.command(name="hello_world", description="this is a test slash command", guilds=[my_guild])
+async def hello_world(ctx):
+	await ctx.send("HELLO.  :)")
 
 # Start bot
 bot.run(TOKEN)

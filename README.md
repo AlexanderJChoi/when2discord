@@ -6,4 +6,3 @@ A discord bot for scheduling events! Hopefully emulating something like when2mee
 ## dependencies
 
 - [discord.py](https://github.com/Rapptz/discord.py)
-- [discord-ui](https://github.com/discord-py-ui/discord-ui/)
