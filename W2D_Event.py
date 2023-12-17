@@ -5,7 +5,7 @@ import uuid
 # Stores time ranges as binary
 # Can reconstruct equivalent time ranges
 class Availability:
-	def __init__(self, times: list[tuple[time,time]] | int=[]):
+	def __init__(self, times: list[tuple[time,time]] | int =0):
 		self.stored_bin_times = 0
 		if isinstance(times, int):
 			self.stored_bin_times = times
@@ -15,21 +15,21 @@ class Availability:
 	def __del__(self):
 		del self.stored_bin
 
-	def get_bin_availability(times: list[tuple[time,time]]):
+	def get_bin_availability(times: list[tuple[time,time]] | None =None):
+		if times is None:
+			return self.stored_bin_times
+			
 		bin_times: int = 0
 		# TODO:
 		return bin_times
 		
-	def get_bin_availability():
-		return self.stored_bin_times
-		
-	def get_range_availability(bin_times: int):
+	def get_range_availability(bin_times: int | None =None):
+		if bin_times is None:
+			bin_times = self.stored_bin_times
+			
 		range_times: list[tuple[time,time]] = []
 		# TODO:
 		return range_times
-	
-	def get_range_availability():
-		return get_range_availability(self.stored_bin_times)
 
 # Implement W2D_Event
 class W2D_Event:
