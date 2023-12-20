@@ -2,6 +2,25 @@ from datetime import date, time, timezone
 from copy import deepcopy
 import uuid
 
+# Converts a 'time' Object to an integer representing the number of half hours since 12AM
+# returns an integer between 0 and 47 inclusive
+def time_to_int(t: time, round_up: bool=True):
+	int_t = (t.hour * 2)
+	if t.minute >= 30:
+		if round_up:
+			int_t += 2
+		else:
+			int_t += 1
+	elif t.minute > 0 and round_up:
+		int_t += 1
+		
+	return int_t if int_t <= 48 else 48
+
+# Converts an integer to a 'time' Object
+# returns the time, if i is the number of half hours since 12AM
+def int_to_time(i: int):
+	return time(hour= i/2, minute= (i%2) * 30)
+
 # Stores time ranges as binary
 # Can reconstruct equivalent time ranges
 class Availability:
@@ -20,7 +39,11 @@ class Availability:
 			return self.stored_bin_times
 			
 		bin_times: int = 0
-		# TODO:
+		for t in times:
+			begin = time_to_int(t[0])
+			end = time_to_int(t[1], round_up=False)
+			for i in range(begin, end):
+				bin_times |= (1 << i)
 		return bin_times
 		
 	def get_range_availability(bin_times: int | None =None):
@@ -28,7 +51,15 @@ class Availability:
 			bin_times = self.stored_bin_times
 			
 		range_times: list[tuple[time,time]] = []
-		# TODO:
+		i = 0
+		begin_time = None
+		while i < 48:
+			if begin_time is None and bin_times & (1 << i):
+				begin_time = int_to_time(i)
+			if begin_time is not None and not bin_times & (1 << i)
+				range_times.append(tuple([begin_time, int_to_time(i)]))
+				begin_time = None
+			i += 1
 		return range_times
 
 # Implement W2D_Event
