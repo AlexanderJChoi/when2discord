@@ -56,7 +56,7 @@ class Availability:
 		while i < 48:
 			if begin_time is None and bin_times & (1 << i):
 				begin_time = int_to_time(i)
-			if begin_time is not None and not bin_times & (1 << i)
+			if begin_time is not None and not bin_times & (1 << i):
 				range_times.append(tuple([begin_time, int_to_time(i)]))
 				begin_time = None
 			i += 1
