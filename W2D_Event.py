@@ -87,21 +87,37 @@ class W2D_Event:
 		
 	# need methods for 
 	# getting plausible_event_times
-	def get_group_availability():
-		group_availability = Availability()
-		# TODO:
+	# m * n runtime (m attendees, n days)
+	def get_group_availability(availabilities: dict[int, dict[date, int]] | None):
+		if availabilities is None:
+			availabilities = self.attendees_availability
+		
+		group_availability = dict[date, int]
+		for attendee_id in availabilities:
+			attendee_availability = availabilities[attendee_id]
+			for date_id in attendee_availability:
+				if date_id in group_availability:
+					group_availability[date_id] &= attendee_availability[date_id]
+				else:
+					group_availability[date_id] = attendee_availability[date_id]
+					
 		return group_availability
 		
 	# adding attendee availability data
-	def set_attendee_availability(attendee_id: int, attendee_availability: dict[date,int] | Availability):
-		if isinstance(attendee_availability, dict):
-			# TODO
+	def set_attendee_availability(attendee_id: int, attendee_availability: dict[date,int] | dict[date,Availability]):
+		if isinstance(attendee_availability, dict[date,int]):
+			self.attendees_availability[attendee_id] = deepcopy(attendee_availability)
 			return
-		elif isinstance(attendee_availability, Availability):
-			# TODO
+		elif isinstance(attendee_availability, dict[date,Availability]):
+			bin_attendee_availability = dict[date, int]
+			for date_id in attendee_availability:
+				bin_attendee_availability[date_id] = attendee_availability[date_id].get_bin_availability()
+			elf.attendees_availability[attendee_id] = deepcopy(bin_attendee_availability)
 			return
 		
 	# getting attendee availability data
 	def get_attendee_availability(attendee_id: int):
-		# TODO:
-		return Availability()
+		if attendee_id in self.attendees_availability:
+			return deepcopy(self.attendees_availability[attendee_id])
+		else:
+			return dict[date, int]
