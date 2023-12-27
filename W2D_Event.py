@@ -1,5 +1,6 @@
 from datetime import date, time, timezone
 from copy import deepcopy
+import pickle
 import uuid
 
 # Converts a 'time' Object to an integer representing the number of half hours since 12AM
@@ -121,3 +122,14 @@ class W2D_Event:
 			return deepcopy(self.attendees_availability[attendee_id])
 		else:
 			return dict[date, int]
+			
+	# writes W2D_Event as binary into file
+	def dump_to_file(self):
+		filename = str(self.title) + "." + str(self.event_uuid) + ".w2de"
+		with open(filename, 'wb') as f:
+			f.write(pickle.dumps(self))
+
+	# read W2D_Event from file as binary
+	def load_from_file(filename):
+		with open(filename, 'rb') as f:
+			return pickle.load(f.read())
