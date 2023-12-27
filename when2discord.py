@@ -4,6 +4,11 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+# Import local modules
+import sys
+sys.path.append(".")
+import Switching_View
+
 # Load Environment variables
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -28,6 +33,11 @@ bot = MyBot(command_prefix='w2d!', description='A bot that will help you schedul
 @app_commands.describe(words="The words you input")
 async def hello_world(interaction: discord.Interaction, words: str = ""):
 	await interaction.response.send_message("HELLO.  :)" + words, ephemeral=True, delete_after=30)
+
+# Testing Switching_View
+@bot.tree.command()
+async def try_switching_view(interaction: discord.Interaction):
+	await interaction.response.send_message(content="TESTING SWITCHING VIEW", ephemeral=True, view=Switching_View.Switching_View())
 
 # Start bot
 bot.run(TOKEN)
