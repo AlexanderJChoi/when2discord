@@ -29,12 +29,12 @@ class Availability:
 		if isinstance(times, int):
 			self.stored_bin_times = times
 		else:
-			self.stored_bin_times = get_bin_availability(times)
+			self.stored_bin_times = self.get_bin_availability(times)
 		
 	def __del__(self):
 		del self.stored_bin
 
-	def get_bin_availability(times: list[tuple[time,time]] | None =None):
+	def get_bin_availability(self, times: list[tuple[time,time]] | None =None):
 		if times is None:
 			return self.stored_bin_times
 			
@@ -46,7 +46,7 @@ class Availability:
 				bin_times |= (1 << i)
 		return bin_times
 		
-	def get_range_availability(bin_times: int | None =None):
+	def get_range_availability(self, bin_times: int | None =None):
 		if bin_times is None:
 			bin_times = self.stored_bin_times
 			
@@ -88,7 +88,7 @@ class W2D_Event:
 	# need methods for 
 	# getting plausible_event_times
 	# m * n runtime (m attendees, n days)
-	def get_group_availability(availabilities: dict[int, dict[date, int]] | None):
+	def get_group_availability(self, availabilities: dict[int, dict[date, int]] | None):
 		if availabilities is None:
 			availabilities = self.attendees_availability
 		
@@ -104,7 +104,7 @@ class W2D_Event:
 		return group_availability
 		
 	# adding attendee availability data
-	def set_attendee_availability(attendee_id: int, attendee_availability: dict[date,int] | dict[date,Availability]):
+	def set_attendee_availability(self, attendee_id: int, attendee_availability: dict[date,int] | dict[date,Availability]):
 		if isinstance(attendee_availability, dict[date,int]):
 			self.attendees_availability[attendee_id] = deepcopy(attendee_availability)
 			return
@@ -116,7 +116,7 @@ class W2D_Event:
 			return
 		
 	# getting attendee availability data
-	def get_attendee_availability(attendee_id: int):
+	def get_attendee_availability(self, attendee_id: int):
 		if attendee_id in self.attendees_availability:
 			return deepcopy(self.attendees_availability[attendee_id])
 		else:
