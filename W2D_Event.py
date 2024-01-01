@@ -27,7 +27,7 @@ def int_to_time(i: int):
 	
 # Return a list of dates between two dates
 def generate_date_list_from_range(d1: date, d2: date):
-	if d2 > d1: 
+	if d2 < d1: 
 		swap(d1, d2)
 	one_day = timedelta(days=1)
 	list_of_days = []
@@ -95,28 +95,16 @@ class Availability:
 
 # Implement W2D_Event
 class W2D_Event:
-	def __init__(self, title: str, group_id: int, selected_days: list[date], earliest_time: time, latest_time: time, selected_timezone: timezone or None):
+	def __init__(self, title: str, group_id: int, selected_days: list[date], earliest_time: time, latest_time: time, selected_timezone: timezone or None=None):
 		self.title = title
 		self.selected_days = selected_days
 		self.earliest_time = earliest_time
 		self.latest_time = latest_time
 		self.selected_timezone = selected_timezone
-		
 		self.event_uuid = uuid.uuid4()
-		
 		# maps discord user/member id to user's availability info
 		# may be useful to have a class for availability_dict later
-		self.attendees_availability: dict[int, dict[date, int]] 
-
-	def __del__(self):
-		del self.title
-		del self.selected_days
-		del self.earliest_time
-		del self.latest_time
-		del self.selected_timezone
-		
-		del self.event_uuid
-		del self.attendees_availability
+		self.attendees_availability: dict[int, dict[date, int]] = dict()
 		
 	# need methods for 
 	# getting plausible_event_times
@@ -125,7 +113,7 @@ class W2D_Event:
 		if availabilities is None:
 			availabilities = self.attendees_availability
 		
-		group_availability = dict[date, int]
+		group_availability: dict[date, int] = dict()
 		for attendee_id in availabilities:
 			attendee_availability = availabilities[attendee_id]
 			for date_id in attendee_availability:
@@ -142,7 +130,7 @@ class W2D_Event:
 			self.attendees_availability[attendee_id] = deepcopy(attendee_availability)
 			return
 		elif isinstance(attendee_availability, dict[date,Availability]):
-			bin_attendee_availability = dict[date, int]
+			bin_attendee_availability: dict[date, int] = dict()
 			for date_id in attendee_availability:
 				bin_attendee_availability[date_id] = attendee_availability[date_id].get_bin_availability()
 			elf.attendees_availability[attendee_id] = deepcopy(bin_attendee_availability)
@@ -153,7 +141,7 @@ class W2D_Event:
 		if attendee_id in self.attendees_availability:
 			return deepcopy(self.attendees_availability[attendee_id])
 		else:
-			return dict[date, int]
+			return dict()
 			
 	# writes W2D_Event as binary into file
 	def dump_to_file(self):
@@ -164,12 +152,12 @@ class W2D_Event:
 	# read W2D_Event from file as binary
 	def load_from_file(filename):
 		with open(filename, 'rb') as f:
-			return pickle.load(f.read())
+			return pickle.load(f)
 
 
 class W2D_Event_Manager:
 	def __init__(self):
-		self.uuid_to_event: dict[str, W2D_Event]
+		self.uuid_to_event: dict[str, W2D_Event] = dict()
 		self.load_event_files()
 		
 	def load_event_files(self):
@@ -182,8 +170,9 @@ class W2D_Event_Manager:
 				if e.title == title and str(e.event_uuid) == uuid_str:
 					self.uuid_to_event[uuid_str] = e
 	
-	def create_event(self, title: str, guild_id: int, date_begin: date, date_end: date, earliest_time: time, latest_time: time) :
-		new_event = W2D_Event(title=title, guild_id=guild_id, selected_days= generate_date_list_from_range(date_begin, date_end), earliest_time=earliest_time, latest_time=latest_time)
+	def create_event(self, title: str, group_id: int, date_begin: date, date_end: date, earliest_time: time, latest_time: time) :
+		days = generate_date_list_from_range(date_begin, date_end)
+		new_event = W2D_Event(title=title, group_id=group_id, selected_days=days, earliest_time=earliest_time, latest_time=latest_time)
 		new_event_uuid_str = str(new_event.event_uuid)
 		new_event.dump_to_file()
 		self.uuid_to_event[new_event_uuid_str] = new_event
