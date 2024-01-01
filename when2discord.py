@@ -4,7 +4,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from datetime import datetime, time
+from datetime import datetime, time, date
 
 # Import local modules
 import sys
@@ -33,8 +33,13 @@ bot = MyBot(command_prefix='w2d!', description='A bot that will help you schedul
 # Implement Data Transformers
 class TimeTransformer(app_commands.Transformer):
 	async def transform(self, interaction: discord.Interaction, value: str) -> time:
-		tv = datetime.strptime(value, "%I:%M%p")
+		tv = datetime.strptime(value, "%I:%M %p")
 		return tv.time()
+	
+class DateTransformer(app_commands.Transformer):
+	async def transform(self, interaction: discord.Interaction, value: str) -> date:
+		dv = datetime.strptime(value, "%d/%m/%Y")
+		return dv.date()
 
 # Handle any errors
 @bot.tree.error
@@ -49,22 +54,35 @@ async def hello_world(interaction: discord.Interaction, words: str = ""):
 	await interaction.response.send_message("HELLO.  :)" + words, ephemeral=True, delete_after=30)
 	
 # TODO: write better description of expected time format
+# TODO: another command to add more date ranges to the event
 @bot.tree.command()
 @app_commands.describe(name="The name of this event", 
-	no_earlier_than_time="The earliest time the event might begin (format like: 10:31PM or 10:31pm)", 
-	no_later_than_time="The latest time the event might end (format like: 10:31PM or 10:31pm)",
-	timezone="The event's local timezone. This parameter does nothing in the current version.")
+	no_earlier_than_time="The earliest time the event might begin (format like: 10:31PM or 10:31 pm)", 
+	no_later_than_time="The latest time the event might end (format like: 10:31PM or 10:31 pm)",
+	timezone="The event's local timezone. This parameter does nothing in the current version.",
+	date_range_begin="The first date in the range to consider (format: DD/MM/YYYY)",
+	date_range_end="The last date in the range to consider (format: DD/MM/YYYY)")
 @app_commands.rename(no_earlier_than_time="no_earlier_than",
 	no_later_than_time="no_later_than")
-async def create_event(interaction: discord.Interaction, name: str, no_earlier_than_time: app_commands.Transform[time, TimeTransformer], no_later_than_time: app_commands.Transform[time, TimeTransformer], timezone: str or None=None):
+async def create_event(interaction: discord.Interaction, name: str, date_range_begin, date_range_end, no_earlier_than_time: app_commands.Transform[time, TimeTransformer], no_later_than_time: app_commands.Transform[time, TimeTransformer], timezone: str or None=None):
 	group_id = interaction.guild_id
 	message = f"{name} : {str(no_earlier_than_time)} : {str(no_later_than_time)} : {str(group_id)}"
 	ephemeral = False
+	delete_after = None
+	
 	if no_later_than_time < no_earlier_than_time:
 		message="ERROR no_later_than must be after no_earlier_than"
 		ephemeral=True
-	# TODO: create a View for adding date intervals
-	await interaction.response.send_message(message, ephemeral=ephemeral)
+		delete_after = 30
+	elif date_range_end < date_range_begin:
+		message="ERROR date_range_end must be after date_range_begin"
+		ephemeral=True
+		delete_after = 30
+		
+	# TODO: create event and register with Event_Manager
+	await interaction.response.send_message(message, ephemeral=ephemeral, delete_after=delete_after)
+	
+# TODO: any command that requires a event uuid as input should have an autocomplete for both uuid or the title
 
 # Testing Switching_View
 @bot.tree.command()
