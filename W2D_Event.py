@@ -1,7 +1,10 @@
-from datetime import date, time, timezone
+from datetime import date, time, timezone, timedelta
 from copy import deepcopy
 import pickle
 import uuid
+import os
+
+# TODO: should keep track of user -> timezone mapping (either per event, or in a file managed by Event Manager)
 
 # Converts a 'time' Object to an integer representing the number of half hours since 12AM
 # returns an integer between 0 and 47 inclusive
@@ -21,6 +24,33 @@ def time_to_int(t: time, round_up: bool=True):
 # returns the time, if i is the number of half hours since 12AM
 def int_to_time(i: int):
 	return time(hour= i/2, minute= (i%2) * 30)
+	
+# Return a list of dates between two dates
+def generate_date_list_from_range(d1: date, d2: date):
+	if d2 > d1: 
+		swap(d1, d2)
+	one_day = timedelta(days=1)
+	list_of_days = []
+	while d1 <= d2:
+		list_of_days += [d1]
+		d1 += one_day
+	return list_of_days
+
+# Returns the date ranges described by the list d
+def generate_date_ranges_from_list(d: list[date]):
+	sort(d)
+	one_day = timedelta(days=1)
+	first = d[0]
+	prev = d[0]
+	ranges = []
+	for x in d:
+		if x == prev or x == prev + one_day:
+			prev = x
+		else:
+			ranges += [(first, prev)]
+			first = x
+			prev = x
+	return ranges
 
 # Stores time ranges as binary
 # Can reconstruct equivalent time ranges
@@ -65,7 +95,7 @@ class Availability:
 
 # Implement W2D_Event
 class W2D_Event:
-	def __init__(self, title: str, group_id: int, selected_days: list[date], earliest_time: time, latest_time: time, selected_timezone: timezone):
+	def __init__(self, title: str, group_id: int, selected_days: list[date], earliest_time: time, latest_time: time, selected_timezone: timezone or None):
 		self.title = title
 		self.selected_days = selected_days
 		self.earliest_time = earliest_time
@@ -73,9 +103,11 @@ class W2D_Event:
 		self.selected_timezone = selected_timezone
 		
 		self.event_uuid = uuid.uuid4()
-		self.attendees_availability: dict[int, dict[date, int]] # maps discord user/member id to user's availability info
-																# may be useful to have a class for availability_dict later
-																
+		
+		# maps discord user/member id to user's availability info
+		# may be useful to have a class for availability_dict later
+		self.attendees_availability: dict[int, dict[date, int]] 
+
 	def __del__(self):
 		del self.title
 		del self.selected_days
@@ -133,3 +165,54 @@ class W2D_Event:
 	def load_from_file(filename):
 		with open(filename, 'rb') as f:
 			return pickle.load(f.read())
+
+
+class W2D_Event_Manager:
+	def __init__(self):
+		self.uuid_to_event: dict[str, W2D_Event]
+		self.load_event_files()
+		
+	def load_event_files(self):
+		for file_name in os.listdir('.'):
+			if file_name.endswith(".w2de"):
+				title, uuid_str , post = file_name.split(".", 2)
+				# TODO: try catch exceptions for the unpickling
+				e = W2D_Event.load_from_file(file_name)
+				# verify the file naming convention matches the file data
+				if e.title == title and str(e.event_uuid) == uuid_str:
+					self.uuid_to_event[uuid_str] = e
+	
+	def create_event(self, title: str, guild_id: int, date_begin: date, date_end: date, earliest_time: time, latest_time: time) :
+		new_event = W2D_Event(title=title, guild_id=guild_id, selected_days= generate_date_list_from_range(date_begin, date_end), earliest_time=earliest_time, latest_time=latest_time)
+		new_event_uuid_str = str(new_event.event_uuid)
+		new_event.dump_to_file()
+		self.uuid_to_event[new_event_uuid_str] = new_event
+		return new_event_uuid_str
+	
+	# should have queue for modifying events
+	# i.e. each write action for an event should have an associated queue_write 
+	# which simply adds the function, and all required paramaters to the queue
+	# then the event manager should have a separate thread/process
+	# that handles these queued function calls in order
+	# (technically overkill, we only need one queue per event to prevent weird problems)
+	# although this doesn't in itself prevent all weird problems
+	# and technically weird problems only occur for duplicates modification calls for the same
+	# (event, user) pair. Seems unlikely and a low priority.
+	
+	# needs functions for:
+	# finding Event using uuid
+	def get_event(self, uuid_str: str): # TODO: do we need to actually return the event, or just uuid/title?
+		if uuid_str in self.uuid_to_event:
+			return self.uuid_to_event[uuid_str]
+		return None
+		
+	def get_guild_events(self, guild_id: int):
+		return [ e for e in self.uuid_to_event.values() if e.guild_id == guild_id ]
+		
+	# ()
+	# viewing event data (total availabiilty, all users availability, specific user's availability)
+	# modifying event parameters
+	# modifying specific user's availability
+	
+	# should load event once, then keep in memory
+	# but also save immediately after each change.
