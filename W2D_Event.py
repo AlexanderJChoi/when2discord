@@ -196,8 +196,23 @@ class W2D_Event_Manager:
 			return self.uuid_to_event[uuid_str]
 		return None
 		
-	def get_guild_events(self, guild_id: int):
-		return [ e for e in self.uuid_to_event.values() if e.guild_id == guild_id ]
+	def get_event_info(self, uuid_str: str):
+		e = self.get_event(uuid_str)
+		if e is None:
+			return None
+		s = '''Event: {title} : {event_uuid}
+		--------------------------------------------------
+		Earliest Time: {e_time} Latest Time: {l_time}
+		Suggested Days: {days}
+		Attendees User IDs ({n}): {attendees}'''.format(title=e.title, event_uuid=str(e.event_uuid), e_time=e.earliest_time.strftime("%I:%M %p"), l_time=e.latest_time.strftime("%I:%M %p"), days=str("\n".join([ day.strftime("%d/%m/%Y") for day in e.selected_days] )), n=len(e.attendees_availability), attendees=str("\n".join(e.attendees_availability)))
+		return s
+		
+		
+	def get_group_events(self, group_id: int):
+		return [ e for e in self.uuid_to_event.values() if e.group_id == group_id ]
+		
+	def get_group_event_list(self, group_id: int):
+		return "\n".join([ f"{e.title} : {str(e.event_uuid)} : {len(e.attendees_availability)} attendees" for e in self.get_group_events(group_id) ])
 		
 	# ()
 	# viewing event data (total availabiilty, all users availability, specific user's availability)
@@ -206,3 +221,9 @@ class W2D_Event_Manager:
 	
 	# should load event once, then keep in memory
 	# but also save immediately after each change.
+	
+if __name__ == '__main__':
+	em = W2D_Event_Manager()
+	for e_uuid_str in em.uuid_to_event:
+		print (len(em.get_event_info(e_uuid_str)))
+	print (em.get_group_event_list(559289815636639755))
