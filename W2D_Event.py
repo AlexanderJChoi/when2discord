@@ -97,6 +97,7 @@ class Availability:
 class W2D_Event:
 	def __init__(self, title: str, group_id: int, selected_days: list[date], earliest_time: time, latest_time: time, selected_timezone: timezone or None=None):
 		self.title = title
+		self.group_id = group_id
 		self.selected_days = selected_days
 		self.earliest_time = earliest_time
 		self.latest_time = latest_time
