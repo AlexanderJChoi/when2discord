@@ -91,6 +91,19 @@ async def create_event(interaction: discord.Interaction, name: str, date_range_b
 	
 # TODO: any command that requires a event uuid as input should have an autocomplete for both uuid or the title
 
+@bot.tree.command()
+async def get_event_info(interaction: discord.Interaction, event_uuid: str):
+	message = e_m.get_event_info(event_uuid) # this method returns too many characters. (max 2000 per message)
+	if message is None:
+		message = f"Event with UUID `{event_uuid}` not found!"
+	
+	await interaction.response.send_message(message, ephemeral=True)
+	
+@bot.tree.command()
+async def get_event_list(interaction:discord.Interaction):
+	group_id = interaction.guild_id
+	await interaction.response.send_message(e_m.get_group_event_list(group_id), ephemeral=True)
+
 # Testing Switching_View
 @bot.tree.command()
 async def try_switching_view(interaction: discord.Interaction):
