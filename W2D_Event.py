@@ -204,7 +204,7 @@ class W2D_Event_Manager:
 		--------------------------------------------------
 		Earliest Time: {e_time} Latest Time: {l_time}
 		Suggested Days: {days}
-		Attendees User IDs ({n}): {attendees}'''.format(title=e.title, event_uuid=str(e.event_uuid), e_time=e.earliest_time.strftime("%I:%M %p"), l_time=e.latest_time.strftime("%I:%M %p"), days=str("\n".join([ day.strftime("%d/%m/%Y") for day in e.selected_days] )), n=len(e.attendees_availability), attendees=str("\n".join(e.attendees_availability)))
+		Attendees User IDs ({n}): {attendees}'''.format(title=e.title, event_uuid=str(e.event_uuid), e_time=e.earliest_time.strftime("%I:%M %p"), l_time=e.latest_time.strftime("%I:%M %p"), days=str("\n".join([ day.strftime("%A %B %d %Y") for day in e.selected_days] )), n=len(e.attendees_availability), attendees=str("\n".join(e.attendees_availability)))
 		return s
 		
 		
