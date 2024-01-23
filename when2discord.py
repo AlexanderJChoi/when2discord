@@ -132,6 +132,29 @@ async def set_my_availability(interaction: discord.Interaction, event_uuid: str)
 	except:
 		print (str(sys.exc_info()))
 
+# TODO: view group availability as image
+
+@bot.tree.command()
+async def get_group_availability(interaction: discord.Interaction, event_uuid: str):
+	message = "NO such event"
+	
+	if e_m.is_event(event_uuid):
+		try:
+			event_title = e_m.get_event_title(event_uuid)
+			days, times = e_m.get_event_group_availability(event_uuid)
+			if len(days) == 0:
+				message = "No times available for event :("
+			else:
+				message = [f"Availability for {event_title}"] + [ d + ":  " + t for d, t in zip(days, times)]
+				message = "\n".join(message)
+		except:
+			t, e, tb = sys.exc_info()
+			message = str((t, e, tb))
+			print(message)
+			traceback.print_tb(tb, file=sys.stdout) 
+	
+	await interaction.response.send_message(content=message)
+
 # Testing Switching_View
 @bot.tree.command()
 async def try_switching_view(interaction: discord.Interaction):

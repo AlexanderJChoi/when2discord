@@ -91,6 +91,15 @@ class Availability:
 			i += 1
 		return range_times
 
+# converts dict[date, int] to dict[str, str] in a nice way
+def event_availability_to_readable(event_availability: dict[date, int], range_delim: str=" "):
+	dates = list(event_availability.keys())
+	availability_ints = list(event_availability.values())
+	
+	dates_str = [ d.strftime("%A %B %d %Y") for d in dates]
+	availability_ranges = [ range_delim.join([ ranges[0].strftime("%I:%M %p") + " - " + ranges[1].strftime("%I:%M %p")  for ranges in Availability(date_availability).get_range_availability() ]) for date_availability in availability_ints]
+	return dict(zip(dates_str, availability_ranges))
+
 # Implement W2D_Event
 class W2D_Event:
 	def __init__(self, title: str, group_id: int, selected_days: list[date], earliest_time: time, latest_time: time, selected_timezone: timezone or None=None):
@@ -108,7 +117,7 @@ class W2D_Event:
 	# need methods for 
 	# getting plausible_event_times
 	# m * n runtime (m attendees, n days)
-	def get_group_availability(self, availabilities: dict[int, dict[date, int]] | None):
+	def get_group_availability(self, availabilities: dict[int, dict[date, int]] | None=None):
 		if availabilities is None:
 			availabilities = self.attendees_availability
 		
@@ -119,7 +128,7 @@ class W2D_Event:
 				if date_id in group_availability:
 					group_availability[date_id] &= attendee_availability[date_id]
 				else:
-					group_availability[date_id] = attendee_availability[date_id]
+					group_availability[date_id] = attendee_availability[date_id] & Availability([(self.earliest_time, self.latest_time)]).get_bin_availability()
 					
 		return group_availability
 		
@@ -261,6 +270,14 @@ class W2D_Event_Manager:
 			return None
 		return e.title
 		
+	def get_event_group_availability(self, event_uuid_str: str):
+		e = self.get_event(event_uuid_str)
+		if e is None:
+			return dict()
+		e_readable = event_availability_to_readable(e.get_group_availability())
+		filtered_keys = [ key for key in list(e_readable.keys()) if not e_readable[key] == ""]
+		filtered_values = [value for value in list(e_readable.values()) if not value == ""]
+		return filtered_keys, filtered_values
 	
 if __name__ == '__main__':
 	em = W2D_Event_Manager()
