@@ -4,6 +4,7 @@ import pickle
 import uuid
 import os
 
+
 # TODO: should keep track of user -> timezone mapping (either per event, or in a file managed by Event Manager)
 
 # Converts a 'time' Object to an integer representing the number of half hours since 12AM
@@ -23,7 +24,7 @@ def time_to_int(t: time, round_up: bool=True):
 # Converts an integer to a 'time' Object
 # returns the time, if i is the number of half hours since 12AM
 def int_to_time(i: int):
-	return time(hour= i/2, minute= (i%2) * 30)
+	return time(hour= i//2, minute= (i%2) * 30) # the // operator is "floored division"
 	
 # Return a list of dates between two dates
 def generate_date_list_from_range(d1: date, d2: date):
@@ -61,9 +62,6 @@ class Availability:
 			self.stored_bin_times = times
 		else:
 			self.stored_bin_times = self.get_bin_availability(times)
-		
-	def __del__(self):
-		del self.stored_bin
 
 	def get_bin_availability(self, times: list[tuple[time,time]] | None =None):
 		if times is None:
@@ -127,10 +125,16 @@ class W2D_Event:
 		
 	# adding attendee availability data
 	def set_attendee_availability(self, attendee_id: int, attendee_availability: dict[date,int] | dict[date,Availability]):
-		if isinstance(attendee_availability, dict[date,int]):
+		if len(attendee_availability) == 0:
+			# set to NOT AVAILABLE
+			self.attendees_availability[attendee_id] = dict(zip(self.selected_days , [0 for day in self.selected_days]))
+			return
+		# test whether dictionary values are int or Availability 
+		test = list(attendee_availability.values())[0]
+		if isinstance(test, int):
 			self.attendees_availability[attendee_id] = deepcopy(attendee_availability)
 			return
-		elif isinstance(attendee_availability, dict[date,Availability]):
+		elif isinstance(test, Availability):
 			bin_attendee_availability: dict[date, int] = dict()
 			for date_id in attendee_availability:
 				bin_attendee_availability[date_id] = attendee_availability[date_id].get_bin_availability()
@@ -179,6 +183,9 @@ class W2D_Event_Manager:
 		self.uuid_to_event[new_event_uuid_str] = new_event
 		return new_event_uuid_str
 	
+	def is_event(self, event_uuid_str: str):
+		return event_uuid_str in self.uuid_to_event
+		
 	# should have queue for modifying events
 	# i.e. each write action for an event should have an associated queue_write 
 	# which simply adds the function, and all required paramaters to the queue
@@ -192,7 +199,7 @@ class W2D_Event_Manager:
 	# needs functions for:
 	# finding Event using uuid
 	def get_event(self, uuid_str: str): # TODO: do we need to actually return the event, or just uuid/title?
-		if uuid_str in self.uuid_to_event:
+		if self.is_event(uuid_str):
 			return self.uuid_to_event[uuid_str]
 		return None
 		
@@ -221,6 +228,39 @@ class W2D_Event_Manager:
 	
 	# should load event once, then keep in memory
 	# but also save immediately after each change.
+	
+	
+	# TZ TODO: this should translate times from user tz to event tz
+	def set_event_attendee_availability(self, event_uuid_str : str, attendee_id: int, attendee_availability: list[list[tuple[time, time]]]):
+		e = self.get_event(event_uuid_str)
+		d = dict()
+		for day, ranges in zip(e.selected_days, attendee_availability):
+			day_availability = Availability(ranges)
+			d[day] = day_availability.get_bin_availability()
+		e.set_attendee_availability(attendee_id, d)
+		e.dump_to_file()
+	
+	# TZ TODO: this should translate times from event tz to user tz
+	def get_selected_event_days_times(self, event_uuid_str: str):
+		e = self.get_event(event_uuid_str)
+		return [ day.strftime("%A %B %d %Y") for day in e.selected_days] , [(e.earliest_time, e.latest_time)]
+		
+	def is_event_attendee(self, event_uuid_str: str, attendee_id: int):
+		return self.is_event(event_uuid_str) and attendee_id in self.get_event(event_uuid_str).attendees_availability.keys()
+		
+	def get_event_attendee_availability(self, event_uuid_str : str, attendee_id: int):
+		if not self.is_event_attendee(event_uuid_str, attendee_id):
+			return None
+		e = self.get_event(event_uuid_str)
+		attendee_availability = e.get_attendee_availability(attendee_id)
+		return [ Availability(date_availability).get_range_availability() for date_availability in list(attendee_availability.values()) ] 
+	
+	def get_event_title(self, event_uuid_str: str):
+		e = self.get_event(event_uuid_str)
+		if e is None: 
+			return None
+		return e.title
+		
 	
 if __name__ == '__main__':
 	em = W2D_Event_Manager()

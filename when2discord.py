@@ -6,11 +6,14 @@ from discord.ext import commands
 
 from datetime import datetime, time, date
 
+import traceback
+
 # Import local modules
 import sys
 sys.path.append(".")
 import Switching_View
 import W2D_Event
+import Set_User_Availability_View
 
 # Load Environment variables
 load_dotenv()
@@ -103,6 +106,31 @@ async def get_event_info(interaction: discord.Interaction, event_uuid: str):
 async def get_event_list(interaction:discord.Interaction):
 	group_id = interaction.guild_id
 	await interaction.response.send_message(e_m.get_group_event_list(group_id), ephemeral=True)
+	
+@bot.tree.command()
+async def set_my_availability(interaction: discord.Interaction, event_uuid: str):
+	# Default message parameters
+	view = None
+	message = "ERROR"
+	
+	# check validity of user_entered uuid
+	if e_m.is_event(event_uuid):
+		try:
+			event_title = e_m.get_event_title(event_uuid)
+			user_id = interaction.user.id
+			date_labels, suggested_time_ranges = e_m.get_selected_event_days_times(event_uuid)
+			default_availability = e_m.get_event_attendee_availability(event_uuid, user_id)
+			view = Set_User_Availability_View.Set_User_Availability_View(event_title, event_uuid, user_id, date_labels, e_m, default_time_ranges=default_availability)
+			message = view.get_status()
+		except:
+			t, e, tb = sys.exc_info()
+			message = str((t, e, tb))
+			print(message)
+			traceback.print_tb(tb, file=sys.stdout) 
+	try:
+		await interaction.response.send_message(content=message, ephemeral=True, view=view)
+	except:
+		print (str(sys.exc_info()))
 
 # Testing Switching_View
 @bot.tree.command()
