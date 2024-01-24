@@ -71,13 +71,11 @@ async def hello_world(interaction: discord.Interaction, words: str = ""):
 	
 	
 # TODO: needs to have method to add more date ranges to events maybe use a view that pops up a modal to enter times in?
-	
-# TODO: write better description of expected time format
-# TODO: another command to add more date ranges to the event
+
 @bot.tree.command()
 @app_commands.describe(name="The name of this event", 
-	no_earlier_than_time="The earliest time the event might begin (format like: 10:31 PM or 10:31 pm)", 
-	no_later_than_time="The latest time the event might end (format like: 10:31 PM or 10:31 pm)",
+	no_earlier_than_time="The earliest time the event might begin (format: HH:MM AM/PM)", 
+	no_later_than_time="The latest time the event might end (format: HH:MM AM/PM)",
 	timezone="The event's local timezone. This parameter does nothing in the current version.",
 	date_range_begin="The first date in the range to consider (format: DD/MM/YYYY)",
 	date_range_end="The last date in the range to consider (format: DD/MM/YYYY)")
