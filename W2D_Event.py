@@ -7,6 +7,8 @@ import os
 
 # TODO: should keep track of user -> timezone mapping (either per event, or in a file managed by Event Manager)
 
+# TODO: need method for breaking up a message into parts
+
 # Converts a 'time' Object to an integer representing the number of half hours since 12AM
 # returns an integer between 0 and 47 inclusive
 def time_to_int(t: time, round_up: bool=True):
@@ -157,6 +159,8 @@ class W2D_Event:
 		else:
 			return dict()
 			
+	# TODO: transfer to json format; requires method for checking if files are already pickled, and translate them to json
+			
 	# writes W2D_Event as binary into file
 	def dump_to_file(self):
 		filename = str(self.title) + "." + str(self.event_uuid) + ".w2de"
@@ -228,6 +232,11 @@ class W2D_Event_Manager:
 		return [ e for e in self.uuid_to_event.values() if e.group_id == group_id ]
 		
 	def get_group_event_list(self, group_id: int):
+		events = [ (e.title, str(e.event_uuid), len(e.attendees_availability)) for e in self.get_group_events(group_id) ] 
+		info = list(zip(*events))
+		return list(info[0]), list(info[1]), list(info[2])
+		
+	def get_group_event_list_str(self, group_id: int):
 		return "\n".join([ f"{e.title} : {str(e.event_uuid)} : {len(e.attendees_availability)} attendees" for e in self.get_group_events(group_id) ])
 		
 	# ()

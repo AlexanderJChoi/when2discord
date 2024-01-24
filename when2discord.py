@@ -37,6 +37,15 @@ bot = MyBot(command_prefix='w2d!', description='A bot that will help you schedul
 
 # Implement helper functions
 
+# Implement autocomplete functions
+async def event_id_autocomplete(interaction: discord.Interaction, curr_str: str) -> list[app_commands.Choice[str]]:
+	group_id = interaction.guild_id
+	# get list of event titles and ids from Event Manager
+	title, e_id, _ = e_m.get_group_event_list(group_id)
+	choices = [ app_commands.Choice(name=t, value=i) for t, i in zip(title, e_id) if curr_str.lower() in t.lower() or curr_str.lower() in i.lower() ]
+
+	return choices[:25]
+
 # Implement Data Transformers
 class TimeTransformer(app_commands.Transformer):
 	async def transform(self, interaction: discord.Interaction, value: str) -> time:
@@ -59,6 +68,9 @@ async def on_command_error(interaction: discord.Interaction, error):
 @app_commands.describe(words="The words you input")
 async def hello_world(interaction: discord.Interaction, words: str = ""):
 	await interaction.response.send_message("HELLO.  :)" + words, ephemeral=True, delete_after=30)
+	
+	
+# TODO: needs to have method to add more date ranges to events
 	
 # TODO: write better description of expected time format
 # TODO: another command to add more date ranges to the event
@@ -92,9 +104,8 @@ async def create_event(interaction: discord.Interaction, name: str, date_range_b
 	
 	await interaction.response.send_message(message, ephemeral=ephemeral, delete_after=delete_after)
 	
-# TODO: any command that requires a event uuid as input should have an autocomplete for both uuid or the title
-
 @bot.tree.command()
+@app_commands.autocomplete(event_uuid=event_id_autocomplete)
 async def get_event_info(interaction: discord.Interaction, event_uuid: str):
 	message = e_m.get_event_info(event_uuid) # this method returns too many characters. (max 2000 per message)
 	if message is None:
@@ -105,9 +116,11 @@ async def get_event_info(interaction: discord.Interaction, event_uuid: str):
 @bot.tree.command()
 async def get_event_list(interaction:discord.Interaction):
 	group_id = interaction.guild_id
-	await interaction.response.send_message(e_m.get_group_event_list(group_id), ephemeral=True)
+	await interaction.response.send_message(e_m.get_group_event_list_str(group_id), ephemeral=True)
 	
+# TODO: command for resetting availability for event
 @bot.tree.command()
+@app_commands.autocomplete(event_uuid=event_id_autocomplete)
 async def set_my_availability(interaction: discord.Interaction, event_uuid: str):
 	# Default message parameters
 	view = None
@@ -135,6 +148,7 @@ async def set_my_availability(interaction: discord.Interaction, event_uuid: str)
 # TODO: view group availability as image
 
 @bot.tree.command()
+@app_commands.autocomplete(event_uuid=event_id_autocomplete)
 async def get_group_availability(interaction: discord.Interaction, event_uuid: str):
 	message = "NO such event"
 	
