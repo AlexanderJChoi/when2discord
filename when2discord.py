@@ -70,7 +70,7 @@ async def hello_world(interaction: discord.Interaction, words: str = ""):
 	await interaction.response.send_message("HELLO.  :)" + words, ephemeral=True, delete_after=30)
 	
 	
-# TODO: needs to have method to add more date ranges to events
+# TODO: needs to have method to add more date ranges to events maybe use a view that pops up a modal to enter times in?
 	
 # TODO: write better description of expected time format
 # TODO: another command to add more date ranges to the event
@@ -118,7 +118,6 @@ async def get_event_list(interaction:discord.Interaction):
 	group_id = interaction.guild_id
 	await interaction.response.send_message(e_m.get_group_event_list_str(group_id), ephemeral=True)
 	
-# TODO: command for resetting availability for event
 @bot.tree.command()
 @app_commands.autocomplete(event_uuid=event_id_autocomplete)
 async def set_my_availability(interaction: discord.Interaction, event_uuid: str):
@@ -168,6 +167,20 @@ async def get_group_availability(interaction: discord.Interaction, event_uuid: s
 			traceback.print_tb(tb, file=sys.stdout) 
 	
 	await interaction.response.send_message(content=message)
+	
+@bot.tree.command()
+@app_commands.autocomplete(event_uuid=event_id_autocomplete)
+async def reset_my_availability(interaction: discord.Interaction, event_uuid: str):
+	message = "NO such event"
+	
+	if e_m.is_event(event_uuid):
+		user_id = interaction.user.id
+		event_title = e_m.get_event_title(event_uuid)
+		e_m.reset_event_attendee_availability(event_uuid, user_id)
+		message = f"Reset your availability for: {event_title}"
+	
+	await interaction.response.send_message(content=message)
+	
 
 # Testing Switching_View
 @bot.tree.command()

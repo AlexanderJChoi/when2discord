@@ -287,6 +287,13 @@ class W2D_Event_Manager:
 		filtered_keys = [ key for key in list(e_readable.keys()) if not e_readable[key] == ""]
 		filtered_values = [value for value in list(e_readable.values()) if not value == ""]
 		return filtered_keys, filtered_values
+		
+	def reset_event_attendee_availability(self, event_uuid_str : str, attendee_id: int):
+		e = self.get_event(event_uuid_str)
+		if e is None:
+			return
+		e.attendees_availability.pop(attendee_id, None)
+		e.dump_to_file()
 	
 if __name__ == '__main__':
 	em = W2D_Event_Manager()
